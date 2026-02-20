@@ -6,12 +6,18 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 import google.generativeai as genai
+
+# =======================
+# Fix SpeechBrain torchaudio backend
+# =======================
+import torchaudio
+torchaudio.set_audio_backend("sox_io")
+
+from speechbrain.pretrained import EncoderClassifier
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
 nltk.download("vader_lexicon")
 sia = SentimentIntensityAnalyzer()
-
-from speechbrain.pretrained import EncoderClassifier
 
 # =============================
 # LOAD ENV
