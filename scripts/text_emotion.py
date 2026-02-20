@@ -2,17 +2,25 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# Load environment variables
 load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-genai.configure(api_key=api_key)
+model = genai.GenerativeModel("models/gemini-2.5-flash")
 
-model = genai.GenerativeModel("gemini-1.5-flash")
+while True:
+    user_input = input("You: ")
 
-response = model.generate_content(
-    "You are VishwAI, an empathetic AI therapist. User: I feel stressed."
-)
+    if user_input.lower() in ["exit", "quit"]:
+        break
 
-print(response.text)
+    prompt = f"""
+    You are VishwAI, a calm and empathetic AI therapist.
+    Be supportive and conversational.
+
+    User: {user_input}
+    """
+
+    response = model.generate_content(prompt)
+
+    print("VishwAI:", response.text)
