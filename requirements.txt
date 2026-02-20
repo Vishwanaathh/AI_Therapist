@@ -1,6 +1,6 @@
 streamlit
 ultralytics
-
+nltk
 python-dotenv
 google-generativeai
 opencv-python-headless

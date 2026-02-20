@@ -6,6 +6,10 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 import google.generativeai as genai
+from nltk.sentiment import SentimentIntensityAnalyzer
+import nltk
+nltk.download("vader_lexicon")
+sia = SentimentIntensityAnalyzer()
 
 # =============================
 # LOAD ENV PROPERLY
@@ -195,6 +199,8 @@ if st.session_state.processed_image is not None:
 # CHAT SECTION
 # =============================
 st.subheader("💬 Talk to VishwAI")
+sia=SentimentIntensityAnalyzer()
+
 
 user_input = st.chat_input("How are you feeling today?")
 
@@ -210,6 +216,21 @@ if user_input:
     If facial emotion aligns with the message, acknowledge it naturally.
     Do not give medical diagnosis.
     """
+    scores=sia.polarity_scores(user_input)
+    compound=scores["compound"]
+    if compound >= 0.05:
+        sentiment_label = "Positive 😊"
+    elif compound <= -0.05:
+        sentiment_label = "Negative 😞"
+    else:
+        sentiment_label = "Neutral 😐"
+    
+    # Display sentiment before Gemini response
+    st.chat_message("user")
+    st.write(user_input)
+    st.markdown(f"**Sentiment:** {sentiment_label} | **Compound Score:** {compound:.2f}")
+
+
 
     response = llm.generate_content(prompt)
 
