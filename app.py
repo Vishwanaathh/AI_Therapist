@@ -238,13 +238,15 @@ if user_input:
 
     st.session_state.chat_history.append(("user", user_input))
     st.session_state.chat_history.append(("assistant", response.text))
-    tts=gTTS(text=response.text)
-    tts = gTTS(text=response.text)
+    tts = gTTS(text=response_text, lang="en")
     mp3_fp = io.BytesIO()
     tts.write_to_fp(mp3_fp)
-    mp3_fp.seek(0)  
+    mp3_fp.seek(0)  # Move to start of file
 
-    st.audio(mp3_fp, format="audio/mp3")
+    # Play audio directly in browser
+    st.audio(mp3_fp, format="audio/mp3")  
+
+    
 
 # Display chat history
 for role, message in st.session_state.chat_history:
