@@ -8,6 +8,7 @@ from pathlib import Path
 import google.generativeai as genai
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
+from gtts import gTTS
 nltk.download("vader_lexicon")
 sia = SentimentIntensityAnalyzer()
 
@@ -236,6 +237,9 @@ if user_input:
 
     st.session_state.chat_history.append(("user", user_input))
     st.session_state.chat_history.append(("assistant", response.text))
+    tts=gTTS(text=response.text)
+    tts.save("output.mp3")
+    st.audio("output.mp3")
 
 # Display chat history
 for role, message in st.session_state.chat_history:
