@@ -238,7 +238,7 @@ if user_input:
 
     st.session_state.chat_history.append(("user", user_input))
     st.session_state.chat_history.append(("assistant", response.text))
-    tts = gTTS(text=response_text, lang="en")
+    tts = gTTS(text=response.text, lang="en")
     mp3_fp = io.BytesIO()
     tts.write_to_fp(mp3_fp)
     mp3_fp.seek(0)  # Move to start of file
