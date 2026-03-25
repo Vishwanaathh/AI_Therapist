@@ -1,25 +1,14 @@
 streamlit==1.32.0
 
-# Core
 numpy==1.24.4
 python-dotenv==1.0.1
-
-# AI / LLM
 google-generativeai==0.3.2
 nltk==3.8.1
-
-# Vision (YOLO + OpenCV)
 ultralytics==8.1.0
 opencv-python-headless==4.8.1.78
-
-# PyTorch (compatible with ultralytics)
 torch==2.1.2
 torchaudio==2.1.2
-
-# Audio processing
 librosa==0.10.1
 soundfile==0.12.1
 speechbrain==0.5.16
-
-# TTS
 gTTS==2.5.1
