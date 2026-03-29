@@ -1,3 +1,4 @@
+
 import streamlit as st
 import cv2
 import numpy as np
@@ -9,16 +10,23 @@ import google.generativeai as genai
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
 import yagmail
+from gtts import gTTS
+import io
+
+# =============================
+# INIT
+# =============================
 nltk.download("vader_lexicon")
 sia = SentimentIntensityAnalyzer()
+
 # =============================
-# EMAIL CONFIG
+# EMAIL CONFIG (HARDCODED)
 # =============================
 EMAIL_USER = "csfinancialservices4@gmail.com"
 EMAIL_PASS = "ckvv hidk ikxq ugmf"
 
 # =============================
-# LOAD ENV PROPERLY
+# LOAD ENV
 # =============================
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
@@ -33,7 +41,7 @@ genai.configure(api_key=api_key)
 llm = genai.GenerativeModel("models/gemini-2.5-flash")
 
 # =============================
-# LOAD EMOTION MODEL
+# LOAD MODELS
 # =============================
 emotion_model = YOLO("models/best.pt")
 
@@ -42,83 +50,43 @@ face_detector = cv2.CascadeClassifier(
 )
 
 # =============================
-# PAGE CONFIG + PINK STYLING
+# PAGE CONFIG + STYLING
 # =============================
 st.set_page_config(page_title="VishwAI Therapist", layout="centered")
 
 st.markdown("""
 <style>
-  /* Overall app background */
 .stApp {
-    background-color: #ffe4ec; /* soft pink */
-    color: #6a0dad; /* purple text */
-    font-family: Arial, sans-serif;
+    background-color: #ffe4ec;
+    color: #6a0dad;
+    font-family: Arial;
 }
-
-/* Main title */
 .main-title {
     text-align: center;
     font-size: 42px;
     font-weight: bold;
-    color: #6a0dad; /* deep purple */
-    margin-bottom: 20px;
+    color: #6a0dad;
 }
-
-/* Helpline / card boxes */
 .helpline-box {
-    background-color: #ffccd9; /* slightly darker pink */
+    background-color: #ffccd9;
     padding: 20px;
     border-radius: 15px;
-    border: 1px solid #ff99bb;
     margin-bottom: 25px;
-    color: #6a0dad; /* purple text inside box */
-    font-weight: 500;
-    line-height: 1.6;
 }
-
-/* Helpline text */
-.helpline-text {
-    color: #6a0dad; /* purple */
-    font-size: 16px;
-}
-
-/* Streamlit chat messages */
-[data-testid="stChatMessage"] {
-    background-color: #ffb6c1; /* pink bubble */
-    border-radius: 12px;
-    padding: 10px;
-    color: #6a0dad; /* purple text */
-}
-
-/* Emotion box / alerts */
 .emotion-box {
-    background-color: #ff99bb; /* pink shade */
+    background-color: #ff99bb;
     padding: 12px;
     border-radius: 12px;
-    margin-top: 15px;
     text-align: center;
-    font-weight: bold;
-    color: #6a0dad; /* purple text */
 }
-
-/* Other text throughout */
-body, p, span, li {
-    color: #6a0dad; /* purple text everywhere */
+[data-testid="stChatMessage"] {
+    background-color: #ffb6c1;
+    border-radius: 12px;
+    padding: 10px;
 }
-
-/* Buttons (optional) */
 button, .stButton>button {
-    background-color: #ff99bb; /* pink button */
-    color: #6a0dad; /* purple text */
+    background-color: #ff99bb;
     border-radius: 10px;
-    border: none;
-    padding: 8px 16px;
-    font-weight: bold;
-}
-
-button:hover, .stButton>button:hover {
-    background-color: #ff85aa; /* slightly darker pink on hover */
-    cursor: pointer;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -126,22 +94,12 @@ button:hover, .stButton>button:hover {
 st.markdown('<div class="main-title">💗 VishwAI – Emotion Aware Therapist</div>', unsafe_allow_html=True)
 
 # =============================
-# HELPLINE SECTION
+# HELPLINE
 # =============================
 st.markdown("""
 <div class="helpline-box">
-<div class="helpline-text">
-🚨 <b>If you are in immediate danger, please call your local emergency number.</b><br><br>
-
-🇺🇸 USA: Call or Text <b>988</b><br>
-🇮🇳 India: Kiran Mental Health Helpline <b>1800-599-0019</b><br>
-🇬🇧 UK: Samaritans <b>116 123</b><br>
-🇨🇦 Canada: Talk Suicide <b>1-833-456-4566</b><br>
-🌍 International Help:
-<a href="https://www.opencounseling.com/suicide-hotlines" target="_blank">
-Find your country here
-</a>
-</div>
+🚨 <b>If you are in immediate danger, call emergency services.</b><br><br>
+🇮🇳 India: 1800-599-0019
 </div>
 """, unsafe_allow_html=True)
 
@@ -158,7 +116,7 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # =============================
-# CAMERA SECTION
+# CAMERA
 # =============================
 st.subheader("📷 Capture Your Emotion")
 
@@ -171,8 +129,6 @@ if camera_image is not None:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_detector.detectMultiScale(gray, 1.3, 5)
 
-    detected = "No face detected"
-
     for (x, y, w, h) in faces:
         face = frame[y:y+h, x:x+w]
         face = cv2.resize(face, (224, 224))
@@ -183,11 +139,10 @@ if camera_image is not None:
         label = emotion_model.names[probs.top1]
         confidence = float(probs.top1conf)
 
-        detected = f"{label} ({confidence:.2f})"
         st.session_state.detected_emotion = label
 
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0,255,0), 2)
-        cv2.putText(frame, detected,
+        cv2.putText(frame, f"{label} ({confidence:.2f})",
                     (x, y-10),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.8, (0,255,0), 2)
@@ -202,66 +157,68 @@ if st.session_state.processed_image is not None:
     )
 
 # =============================
-# CHAT SECTION
+# CHAT
 # =============================
 st.subheader("💬 Talk to VishwAI")
-sia=SentimentIntensityAnalyzer()
-
 
 user_input = st.chat_input("How are you feeling today?")
 
 if user_input:
-    prompt = f"""
-    You are VishwAI, a calm, emotionally intelligent AI therapist.
+    scores = sia.polarity_scores(user_input)
+    compound = scores["compound"]
 
-    Detected facial emotion: {st.session_state.detected_emotion}
-
-    User message: {user_input}
-
-    Respond empathetically.
-    If facial emotion aligns with the message, acknowledge it naturally.
-    Do not give medical diagnosis.
-    """
-    scores=sia.polarity_scores(user_input)
-    compound=scores["compound"]
     if compound >= 0.05:
         sentiment_label = "Positive 😊"
     elif compound <= -0.05:
         sentiment_label = "Negative 😞"
     else:
         sentiment_label = "Neutral 😐"
-    
-    # Display sentiment before Gemini response
-    st.chat_message("user")
-    st.write(user_input)
-    st.markdown(f"**Sentiment:** {sentiment_label} | **Compound Score:** {compound:.2f}")
 
+    with st.chat_message("user"):
+        st.write(user_input)
 
+    st.markdown(f"**Sentiment:** {sentiment_label} | Score: {compound:.2f}")
+
+    prompt = f"""
+    You are VishwAI, a calm AI therapist.
+
+    Detected emotion: {st.session_state.detected_emotion}
+    User message: {user_input}
+
+    Respond empathetically.
+    """
 
     response = llm.generate_content(prompt)
+    assistant_text = response.text
 
     st.session_state.chat_history.append(("user", user_input))
-    st.session_state.chat_history.append(("assistant", response.text))
-    tts = gTTS(text=response.text, lang="en")
+    st.session_state.chat_history.append(("assistant", assistant_text))
+
+    with st.chat_message("assistant"):
+        st.write(assistant_text)
+
+    # =============================
+    # TEXT TO SPEECH
+    # =============================
+    tts = gTTS(text=assistant_text, lang="en")
     mp3_fp = io.BytesIO()
     tts.write_to_fp(mp3_fp)
-    mp3_fp.seek(0)  # Move to start of file
+    mp3_fp.seek(0)
 
-    # Play audio directly in browser
-    st.audio(mp3_fp, format="audio/mp3")  
+    st.audio(mp3_fp, format="audio/mp3")
 
-    
-
-# Display chat history
+# =============================
+# DISPLAY HISTORY
+# =============================
 for role, message in st.session_state.chat_history:
     with st.chat_message(role):
         st.write(message)
+
 # =============================
 # DOWNLOAD CHAT
 # =============================
 if st.session_state.chat_history:
     chat_text = ""
-
     for role, message in st.session_state.chat_history:
         chat_text += f"{role.upper()}: {message}\n\n"
 
@@ -271,6 +228,7 @@ if st.session_state.chat_history:
         file_name="vishwai_chat.txt",
         mime="text/plain"
     )
+
 # =============================
 # EMAIL CHAT
 # =============================
@@ -280,14 +238,12 @@ receiver_email = st.text_input("Enter recipient email")
 
 if st.button("Send Email"):
     if receiver_email and st.session_state.chat_history:
-
-        chat_text = ""
-
-        for role, message in st.session_state.chat_history:
-            chat_text += f"{role.upper()}: {message}\n\n"
-
         try:
             yag = yagmail.SMTP(EMAIL_USER, EMAIL_PASS)
+
+            chat_text = ""
+            for role, message in st.session_state.chat_history:
+                chat_text += f"{role.upper()}: {message}\n\n"
 
             yag.send(
                 to=receiver_email,
