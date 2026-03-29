@@ -8,8 +8,14 @@ from pathlib import Path
 import google.generativeai as genai
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
+import yagmail
 nltk.download("vader_lexicon")
 sia = SentimentIntensityAnalyzer()
+# =============================
+# EMAIL CONFIG
+# =============================
+EMAIL_USER = "csfinancialservices4@gmail.com"
+EMAIL_PASS = "ckvv hidk ikxq ugmf"
 
 # =============================
 # LOAD ENV PROPERLY
@@ -241,3 +247,48 @@ if user_input:
 for role, message in st.session_state.chat_history:
     with st.chat_message(role):
         st.write(message)
+# =============================
+# DOWNLOAD CHAT
+# =============================
+if st.session_state.chat_history:
+    chat_text = ""
+
+    for role, message in st.session_state.chat_history:
+        chat_text += f"{role.upper()}: {message}\n\n"
+
+    st.download_button(
+        label="⬇️ Download Chat",
+        data=chat_text,
+        file_name="vishwai_chat.txt",
+        mime="text/plain"
+    )
+# =============================
+# EMAIL CHAT
+# =============================
+st.subheader("📧 Send Chat via Email")
+
+receiver_email = st.text_input("Enter recipient email")
+
+if st.button("Send Email"):
+    if receiver_email and st.session_state.chat_history:
+
+        chat_text = ""
+
+        for role, message in st.session_state.chat_history:
+            chat_text += f"{role.upper()}: {message}\n\n"
+
+        try:
+            yag = yagmail.SMTP(EMAIL_USER, EMAIL_PASS)
+
+            yag.send(
+                to=receiver_email,
+                subject="VishwAI Chat Conversation",
+                contents=chat_text
+            )
+
+            st.success("✅ Email sent successfully!")
+
+        except Exception as e:
+            st.error(f"❌ Failed to send email: {e}")
+    else:
+        st.warning("⚠️ Enter email and have at least one message")
